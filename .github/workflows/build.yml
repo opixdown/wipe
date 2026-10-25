@@ -1,0 +1,26 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build --package-path macos -c release
+
+  windows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: windows/go.mod
+      - name: build amd64 + arm64
+        working-directory: windows
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o /dev/null .
+          GOOS=windows GOARCH=arm64 go build -o /dev/null .

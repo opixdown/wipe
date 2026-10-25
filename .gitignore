@@ -1,4 +1,4 @@
-cli/.build/
-dist/
+macos/.build/
+site/dist/
 .vercel
 .DS_Store
