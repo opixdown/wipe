@@ -90,6 +90,7 @@
     transition: color .2s ease, border-color .2s ease;
   }
   .chip:hover { color: var(--ink); border-color: var(--muted); }
+  a.chip { text-decoration: none; }
   .chip.plain { padding: 6px 14px; }
   .chip .combo { display: inline-flex; gap: 4px; }
   .chip.recording { color: var(--accent); border-color: var(--accent); }
@@ -256,6 +257,7 @@
     <button class="chip" id="recBtn" type="button" title="Change the exit shortcut">
       <span class="combo-label">Exit</span><span class="combo" id="comboView"></span>
     </button>
+    <a class="chip plain" href="https://github.com/opixdown/wipe" target="_blank" rel="noopener">GitHub</a>
     <button class="chip plain" id="themeBtn" type="button">Dark</button>
   </div>
 </header>
