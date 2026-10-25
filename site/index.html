@@ -52,8 +52,6 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
-    min-height: 100vh; min-height: 100dvh;
-    display: grid; grid-template-rows: auto 1fr auto;
     background: var(--paper); color: var(--ink);
     font-family: Poppins, "Helvetica Neue", Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -182,8 +180,35 @@
   .commands { display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
   .commands span::before { content: "$ "; opacity: .5; }
 
+  /* the first screen fills the viewport; the video and footer sit below it */
+  .first { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+
+  /* ---------- video ---------- */
+  .watch { padding: 72px 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+  .watch .label { text-align: center; }
+  .watch h3 { margin: 0; font-size: clamp(26px, 3.4vw, 40px); font-weight: 600; letter-spacing: -.025em; text-align: center; }
+  .watch h3 em { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 1.1em; color: var(--muted); }
+  .player {
+    width: min(1100px, 100%); aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--line); background: #131211; box-shadow: 0 30px 80px rgba(30, 26, 21, .16);
+  }
+  .player video { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+  /* ---------- footer ---------- */
+  footer {
+    margin: 64px 28px 0; padding: 28px 0 36px; border-top: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    font-size: 14px; color: var(--muted);
+  }
+  footer .made { display: flex; align-items: center; gap: 10px; }
+  footer .made .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  footer nav { display: flex; gap: 8px; }
+  footer a.chip { text-decoration: none; }
+
   @media (max-width: 860px) {
     header { padding: 16px; }
+    .watch { padding: 48px 16px 8px; }
+    footer { margin: 40px 16px 0; }
     .modes { flex-direction: column; padding: 0 16px; min-height: 0; }
     .mode { min-height: 150px; padding: 22px; }
     .mode:hover { flex-grow: 1; }
@@ -251,6 +276,7 @@
 </head>
 <body>
 
+<div class="first">
 <header class="rise">
   <div class="brand"><span class="dot"></span>wipe <em>mode</em></div>
   <div class="top-right">
@@ -306,6 +332,23 @@
     <span>wipe keyboard</span>
   </div>
 </section>
+</div>
+
+<section class="watch" id="watch">
+  <span class="label">See it in 24 seconds</span>
+  <h3>Clean <em>without</em> shutting down</h3>
+  <div class="player">
+    <video src="media/wipe-promo.mp4" poster="media/poster.jpg" controls playsinline preload="metadata"></video>
+  </div>
+</section>
+
+<footer>
+  <div class="made"><span class="dot"></span>wipe · made by opixdown</div>
+  <nav>
+    <a class="chip plain" id="contactLink" href="mailto:atharvawaghmare34@gmail.com?subject=wipe">Contact me</a>
+    <a class="chip plain" href="https://github.com/opixdown/wipe" target="_blank" rel="noopener">GitHub</a>
+  </nav>
+</footer>
 
 <div class="overlay" id="overlay">
   <div class="lock-title">
