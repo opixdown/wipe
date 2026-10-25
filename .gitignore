@@ -1,0 +1,4 @@
+cli/.build/
+dist/
+.vercel
+.DS_Store

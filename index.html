@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wipe</title>
+<meta name="description" content="Clean your screen and keyboard without shutting down.">
+<meta property="og:title" content="wipe — clean without shutting down">
+<meta property="og:description" content="Black screen, white screen and a full keyboard lock for Mac and Windows. Free.">
+<meta property="og:url" content="https://wipemode.vercel.app">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#E5DBC9">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='9' fill='%23C4704F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Same paper / ink palette as EarlyFound. Light by default, dark follows the system. */
+  :root {
+    color-scheme: light;
+    --paper:   #E5DBC9;
+    --surface: #F0E8D8;
+    --line:    #D3C6B1;
+    --ink:     #1E1A15;
+    --muted:   #5D554A;
+    --accent:  #C4704F;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --paper:   #121110;
+      --surface: #1B1917;
+      --line:    #2E2A27;
+      --ink:     #EDE7E1;
+      --muted:   #A39C95;
+      --accent:  #D08463;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --paper:   #121110;
+    --surface: #1B1917;
+    --line:    #2E2A27;
+    --ink:     #EDE7E1;
+    --muted:   #A39C95;
+    --accent:  #D08463;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh; min-height: 100dvh;
+    display: grid; grid-template-rows: auto 1fr auto;
+    background: var(--paper); color: var(--ink);
+    font-family: Poppins, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color .4s ease, color .4s ease;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  kbd {
+    font-family: inherit; font-size: 12px; font-weight: 500;
+    padding: 2px 8px; border-radius: 4px;
+    border: 1px solid var(--line); border-bottom-width: 2px; background: var(--surface);
+  }
+
+  @keyframes rise-in {
+    from { opacity: 0; transform: translate3d(0, 14px, 0); }
+    to   { opacity: 1; transform: none; }
+  }
+  .rise { animation: rise-in .8s var(--ease) both; }
+
+  /* ---------- top bar ---------- */
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 20px 28px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 600; letter-spacing: -.01em; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: breathe 2.4s ease-in-out infinite; }
+  .brand em { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 22px; color: var(--muted); }
+  @keyframes breathe { 50% { opacity: .35; } }
+  .top-right { display: flex; align-items: center; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--line); background: transparent; color: var(--muted);
+    border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 13px;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .chip:hover { color: var(--ink); border-color: var(--muted); }
+  .chip.plain { padding: 6px 14px; }
+  .chip .combo { display: inline-flex; gap: 4px; }
+  .chip.recording { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- modes: three full-height panels ---------- */
+  .modes { display: flex; gap: 12px; padding: 0 28px; min-height: 340px; }
+  .mode {
+    flex: 1 1 0; min-width: 0; position: relative; overflow: hidden;
+    border: 1px solid var(--line); border-radius: 12px; padding: 28px;
+    display: flex; flex-direction: column; justify-content: space-between; text-align: left;
+    transition: flex-grow .7s var(--ease), transform .2s ease;
+  }
+  .mode:hover { flex-grow: 1.45; }
+  .mode:active { transform: scale(.996); }
+  .mode.black { background: #000; color: #F2F2F2; border-color: #000; }
+  .mode.white { background: #fff; color: #141414; }
+  .mode.keys  { background: #131211; color: #EDE7E1; border-color: #131211; }
+  :root[data-theme="dark"] .mode.black, :root[data-theme="dark"] .mode.keys { border-color: var(--line); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .mode.black, :root:not([data-theme="light"]) .mode.keys { border-color: var(--line); }
+  }
+  .mode .num { font-size: 13px; opacity: .45; font-variant-numeric: tabular-nums; }
+  .mode h2 { margin: 0; font-size: clamp(30px, 4vw, 52px); font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+  .mode h2 em { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 1.1em; }
+  .mode .go {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+    font-size: 14px; opacity: .55; transition: opacity .3s ease;
+  }
+  .mode .go::after { content: "→"; transition: transform .35s var(--ease); }
+  .mode:hover .go { opacity: 1; }
+  .mode:hover .go::after { transform: translateX(4px); }
+  /* the keyboard panel carries a ghost of the exit ring */
+  .mode .ghost-ring {
+    position: absolute; right: 28px; top: 28px; width: 44px; height: 44px; color: var(--accent);
+    transform: rotate(-90deg);
+  }
+  .ghost-ring circle { fill: none; stroke-width: 3; stroke: currentColor; }
+  .ghost-ring .track { opacity: .18; }
+  .ghost-ring .bar { stroke-linecap: round; stroke-dasharray: 113.1; stroke-dashoffset: 85; transition: stroke-dashoffset 1s var(--ease); }
+  .mode:hover .ghost-ring .bar { stroke-dashoffset: 0; }
+
+  /* ---------- install bar ---------- */
+  .install {
+    margin: 12px 28px 28px; padding: 22px 24px; border-radius: 12px;
+    background: var(--surface); border: 1px solid var(--line);
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px 32px; align-items: center;
+  }
+  .install-left { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .install-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: var(--muted); }
+  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  .tabs button {
+    border: none; background: transparent; color: var(--muted); font-size: 12px;
+    padding: 4px 12px; border-radius: 999px; transition: background-color .25s ease, color .25s ease;
+  }
+  .tabs button[aria-selected="true"] { background: var(--ink); color: var(--paper); }
+
+  .cmd {
+    position: relative; border-radius: 8px; background: var(--paper); border: 1px solid var(--line);
+    padding: 16px 92px 16px 18px;
+  }
+  .cmd code {
+    display: block; overflow-x: auto; white-space: nowrap; scrollbar-width: none;
+    font-family: var(--mono); font-size: 14px;
+  }
+  .cmd code::-webkit-scrollbar { display: none; }
+  .cmd code::before { content: "$ "; color: var(--muted); }
+  .copy {
+    position: absolute; top: 8px; right: 8px; bottom: 8px;
+    display: inline-flex; align-items: center; gap: 6px;
+    border: none; border-radius: 6px; padding: 0 12px;
+    background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 500;
+    transition: transform .15s ease;
+  }
+  .copy:active { transform: scale(.96); }
+  .copy svg { width: 14px; height: 14px; }
+
+  .steps { display: flex; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .steps li {
+    display: flex; align-items: center; gap: 10px; white-space: nowrap;
+    font-size: 14px; color: var(--muted);
+  }
+  .steps li + li::before { content: ""; width: 18px; height: 1px; background: var(--line); }
+  .steps b {
+    display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--line); font-size: 11px; font-weight: 600; color: var(--ink);
+  }
+  .steps code { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  .commands { display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .commands span::before { content: "$ "; opacity: .5; }
+
+  @media (max-width: 860px) {
+    header { padding: 16px; }
+    .modes { flex-direction: column; padding: 0 16px; min-height: 0; }
+    .mode { min-height: 150px; padding: 22px; }
+    .mode:hover { flex-grow: 1; }
+    .install { margin: 12px 16px 16px; grid-template-columns: 1fr; padding: 18px; }
+    .steps { flex-wrap: wrap; }
+    .steps li + li::before { display: none; }
+    .commands { display: none; }
+    .chip .combo-label { display: none; }
+  }
+
+  /* ---------- clean overlays ---------- */
+  .overlay {
+    position: fixed; inset: 0; z-index: 50; display: none; opacity: 0;
+    cursor: none; user-select: none; -webkit-user-select: none;
+    transition: opacity .35s ease;
+  }
+  .overlay.show { display: block; }
+  .overlay.in { opacity: 1; }
+  .overlay.black { background: #000; color: #666; }
+  .overlay.white { background: #fff; color: #9A9A9A; }
+  .overlay.keys  { background: #131211; color: #EDE7E1; cursor: default; }
+  .hint {
+    position: absolute; left: 50%; bottom: 48px; transform: translateX(-50%);
+    font-size: 14px; text-align: center; transition: opacity 1.2s ease; white-space: nowrap;
+  }
+  .overlay.keys .hint { color: rgba(237, 231, 225, .45); }
+  .hint.fade { opacity: 0; }
+  .hint kbd { background: transparent; border-color: currentColor; color: inherit; }
+  .lock-title {
+    position: absolute; left: 0; right: 0; top: calc(50% - 150px); text-align: center; display: none;
+  }
+  .overlay.keys .lock-title { display: block; }
+  .lock-title h2 { margin: 0 0 10px; font-size: 34px; font-weight: 600; letter-spacing: -.02em; }
+  .lock-title h2 em { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 1.12em; }
+  .lock-title p { margin: 0; font-size: 15px; color: rgba(237, 231, 225, .5); }
+
+  /* hold-to-exit ring */
+  .ring {
+    position: absolute; left: 50%; top: 50%; width: 88px; height: 88px;
+    transform: translate(-50%, -50%); opacity: 0; transition: opacity .15s ease; pointer-events: none;
+  }
+  .overlay.keys .ring { top: calc(50% + 10px); color: var(--accent); }
+  .ring.on { opacity: 1; }
+  .ring circle { fill: none; stroke-width: 3; }
+  .ring .track { stroke: currentColor; opacity: .18; }
+  .ring .bar {
+    stroke: currentColor; stroke-linecap: round;
+    stroke-dasharray: 251.3; stroke-dashoffset: 251.3;
+    transform: rotate(-90deg); transform-origin: 50% 50%;
+  }
+  .hold-btn {
+    position: absolute; right: 28px; bottom: 36px; display: none; overflow: hidden;
+    border: 1px solid rgba(237, 231, 225, .18); background: transparent; color: rgba(237, 231, 225, .6);
+    border-radius: 999px; padding: 8px 18px; font-size: 13px;
+  }
+  .overlay.keys .hold-btn { display: block; }
+  .hold-btn .fill { position: absolute; inset: 0; background: var(--accent); transform: scaleX(0); transform-origin: left; }
+  .hold-btn span { position: relative; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rise, .brand .dot { animation: none; }
+    * { transition-duration: 0s !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="rise">
+  <div class="brand"><span class="dot"></span>wipe <em>mode</em></div>
+  <div class="top-right">
+    <button class="chip" id="recBtn" type="button" title="Change the exit shortcut">
+      <span class="combo-label">Exit</span><span class="combo" id="comboView"></span>
+    </button>
+    <button class="chip plain" id="themeBtn" type="button">Dark</button>
+  </div>
+</header>
+
+<main class="modes rise" style="animation-delay:.08s">
+  <button class="mode black" data-mode="black" type="button">
+    <span class="num">01</span>
+    <div><h2>Black</h2><span class="go">Wipe the screen</span></div>
+  </button>
+  <button class="mode white" data-mode="white" type="button">
+    <span class="num">02</span>
+    <div><h2>White</h2><span class="go">Spot the streaks</span></div>
+  </button>
+  <button class="mode keys" data-mode="keys" type="button">
+    <span class="num">03</span>
+    <svg class="ghost-ring" viewBox="0 0 44 44" aria-hidden="true"><circle class="track" cx="22" cy="22" r="18"/><circle class="bar" cx="22" cy="22" r="18"/></svg>
+    <div><h2>Key<em>board</em></h2><span class="go">Lock every key</span></div>
+  </button>
+</main>
+
+<section class="install rise" style="animation-delay:.16s">
+  <div class="install-left">
+    <div class="install-head">
+      <span class="label">Full lock app</span>
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" data-os="mac">Mac</button>
+        <button type="button" role="tab" data-os="win">Windows</button>
+      </div>
+    </div>
+    <div class="cmd">
+      <code id="cmdText"></code>
+      <button class="copy" id="copyBtn" type="button" aria-label="Copy command">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5"/></svg>
+        <span id="copyLabel">Copy</span>
+      </button>
+    </div>
+    <ol class="steps">
+      <li><b>1</b>Copy</li>
+      <li><b>2</b>Paste in <span id="termName">Terminal</span></li>
+      <li><b>3</b>Type <code>wipe</code></li>
+    </ol>
+  </div>
+  <div class="commands" aria-label="Commands">
+    <span>wipe screen black</span>
+    <span>wipe screen white</span>
+    <span>wipe keyboard</span>
+  </div>
+</section>
+
+<div class="overlay" id="overlay">
+  <div class="lock-title">
+    <h2>Keyboard <em>locked</em></h2>
+    <p>Wipe away. Nothing you press does anything.</p>
+  </div>
+  <svg class="ring" viewBox="0 0 88 88"><circle class="track" cx="44" cy="44" r="40"/><circle class="bar" cx="44" cy="44" r="40"/></svg>
+  <div class="hint" id="hint"></div>
+  <button class="hold-btn" id="holdBtn" type="button"><div class="fill" id="holdFill"></div><span>Hold to exit</span></button>
+</div>
+
+<script>
+(() => {
+  const HOLD_MS = 1000;
+  const DEFAULT_COMBO = { ctrl: true, alt: false, shift: true, meta: false, code: "KeyX" };
+  const MOD_CODES = ["ControlLeft","ControlRight","ShiftLeft","ShiftRight","AltLeft","AltRight","MetaLeft","MetaRight","CapsLock","Fn"];
+  const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  // ---------- theme ----------
+  const themeBtn = document.getElementById("themeBtn");
+  const applyTheme = t => {
+    if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
+    const dark = t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    themeBtn.textContent = dark ? "Light" : "Dark";
+  };
+  applyTheme(store.get("wipe.theme"));
+  themeBtn.onclick = () => {
+    const next = themeBtn.textContent === "Dark" ? "dark" : "light";
+    store.set("wipe.theme", next);
+    applyTheme(next);
+  };
+
+  // ---------- exit shortcut ----------
+  let combo = store.get("wipe.combo") || DEFAULT_COMBO;
+
+  const keyName = code => {
+    if (code.startsWith("Key")) return code.slice(3);
+    if (code.startsWith("Digit")) return code.slice(5);
+    const names = { Escape: "Esc", Backquote: "`", Minus: "-", Equal: "=", BracketLeft: "[", BracketRight: "]",
+      Backslash: "\\", Semicolon: ";", Quote: "'", Comma: ",", Period: ".", Slash: "/", Space: "Space",
+      ArrowUp: "↑", ArrowDown: "↓", ArrowLeft: "←", ArrowRight: "→", Backspace: "Delete", Enter: "Return" };
+    return names[code] || code;
+  };
+  const comboParts = c => [
+    c.ctrl && "Ctrl", c.alt && (isMac ? "Option" : "Alt"), c.shift && "Shift", c.meta && (isMac ? "⌘" : "Win"), keyName(c.code),
+  ].filter(Boolean);
+  const kbds = c => comboParts(c).map(p => `<kbd>${p}</kbd>`).join("");
+
+  const comboView = document.getElementById("comboView");
+  const hint = document.getElementById("hint");
+  const renderCombo = () => {
+    comboView.innerHTML = kbds(combo);
+    hint.innerHTML = `Hold ${kbds(combo)} to exit`;
+  };
+  renderCombo();
+
+  // Click the chip, press a new shortcut. Esc cancels; Backspace resets to the default.
+  let recording = false;
+  const recBtn = document.getElementById("recBtn");
+  const setRecording = on => {
+    recording = on;
+    recBtn.classList.toggle("recording", on);
+    if (on) comboView.textContent = "press keys…"; else renderCombo();
+  };
+  recBtn.onclick = () => setRecording(!recording);
+
+  // ---------- install command ----------
+  const INSTALL = {
+    mac: { cmd: "curl -fsSL https://wipemode.vercel.app/install.sh | sh", term: "Terminal" },
+    win: { cmd: "irm https://wipemode.vercel.app/install.ps1 | iex", term: "PowerShell" },
+  };
+  const cmdText = document.getElementById("cmdText");
+  const setOS = os => {
+    document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.os === os));
+    cmdText.textContent = INSTALL[os].cmd;
+    document.getElementById("termName").textContent = INSTALL[os].term;
+  };
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => setOS(b.dataset.os));
+  setOS(/Win/.test(navigator.platform) || /Windows/.test(navigator.userAgent) ? "win" : "mac");
+
+  const copyLabel = document.getElementById("copyLabel");
+  document.getElementById("copyBtn").onclick = async () => {
+    try { await navigator.clipboard.writeText(cmdText.textContent); }
+    catch {
+      const r = document.createRange(); r.selectNodeContents(cmdText);
+      getSelection().removeAllRanges(); getSelection().addRange(r);
+      document.execCommand("copy");
+    }
+    copyLabel.textContent = "Copied";
+    setTimeout(() => copyLabel.textContent = "Copy", 1600);
+  };
+
+  // ---------- sessions ----------
+  const overlay = document.getElementById("overlay");
+  const ring = overlay.querySelector(".ring");
+  const bar = ring.querySelector(".bar");
+  let mode = null;           // "black" | "white" | "keys" | null
+  let hintTimer;
+
+  const lockKeys = async () => {
+    try { await document.documentElement.requestFullscreen({ navigationUI: "hide" }); } catch {}
+    try { if (navigator.keyboard?.lock) await navigator.keyboard.lock(); } catch {}
+  };
+
+  const start = async m => {
+    mode = m;
+    overlay.className = "overlay show " + m;
+    requestAnimationFrame(() => overlay.classList.add("in"));
+    await lockKeys();
+    // on a blank screen the hint fades so it doesn't hide dust
+    hint.classList.remove("fade");
+    clearTimeout(hintTimer);
+    if (m !== "keys") hintTimer = setTimeout(() => hint.classList.add("fade"), 3000);
+    window.addEventListener("beforeunload", guardUnload);
+  };
+
+  const stop = async () => {
+    mode = null;
+    cancelHold();
+    overlay.classList.remove("in");
+    setTimeout(() => { if (!mode) overlay.className = "overlay"; }, 350);
+    window.removeEventListener("beforeunload", guardUnload);
+    try { navigator.keyboard?.unlock(); } catch {}
+    if (document.fullscreenElement) try { await document.exitFullscreen(); } catch {}
+  };
+
+  const guardUnload = e => { e.preventDefault(); e.returnValue = ""; };
+
+  document.querySelectorAll(".mode").forEach(b => b.addEventListener("click", () => start(b.dataset.mode)));
+
+  // Knocked out of fullscreen mid-clean: stay covered, show the hint, and a click goes back in.
+  document.addEventListener("fullscreenchange", () => { if (mode && !document.fullscreenElement) hint.classList.remove("fade"); });
+  overlay.addEventListener("click", () => { if (mode && !document.fullscreenElement) lockKeys(); });
+  document.addEventListener("contextmenu", e => { if (mode) e.preventDefault(); });
+
+  // ---------- hold-to-exit ----------
+  let holdStart = 0, holdRaf = 0;
+  const beginHold = () => {
+    if (holdStart) return;
+    holdStart = performance.now();
+    ring.classList.add("on");
+    const tick = now => {
+      const p = Math.min((now - holdStart) / HOLD_MS, 1);
+      bar.style.strokeDashoffset = 251.3 * (1 - p);
+      if (p >= 1) { stop(); return; }
+      holdRaf = requestAnimationFrame(tick);
+    };
+    holdRaf = requestAnimationFrame(tick);
+  };
+  const cancelHold = () => {
+    holdStart = 0;
+    cancelAnimationFrame(holdRaf);
+    ring.classList.remove("on");
+    bar.style.strokeDashoffset = 251.3;
+  };
+
+  const down = new Set();
+  const comboHeld = () =>
+    down.has(combo.code) &&
+    combo.ctrl  === (down.has("ControlLeft") || down.has("ControlRight")) &&
+    combo.shift === (down.has("ShiftLeft")   || down.has("ShiftRight")) &&
+    combo.alt   === (down.has("AltLeft")     || down.has("AltRight")) &&
+    combo.meta  === (down.has("MetaLeft")    || down.has("MetaRight"));
+
+  window.addEventListener("keydown", e => {
+    if (recording) {
+      e.preventDefault();
+      if (MOD_CODES.includes(e.code)) return;
+      const mods = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+      if (e.code === "Escape" && !mods) { setRecording(false); return; }
+      if (e.code === "Backspace" && !mods) { combo = DEFAULT_COMBO; store.set("wipe.combo", combo); setRecording(false); return; }
+      if (!mods) { comboView.textContent = "add ctrl, shift, option or ⌘"; return; }
+      combo = { ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey, code: e.code };
+      store.set("wipe.combo", combo);
+      setRecording(false);
+      return;
+    }
+    if (!mode) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    down.add(e.code);
+    if (comboHeld()) beginHold(); else cancelHold();
+  }, true);
+
+  window.addEventListener("keyup", e => {
+    if (!mode) { down.delete(e.code); return; }
+    e.preventDefault();
+    down.delete(e.code);
+    // macOS drops keyup for other keys while ⌘ is held; clear everything when ⌘ lifts.
+    if (e.code === "MetaLeft" || e.code === "MetaRight") down.clear();
+    if (!comboHeld()) cancelHold();
+  }, true);
+
+  window.addEventListener("blur", () => { down.clear(); cancelHold(); });
+
+  // ---------- trackpad exit for keyboard mode ----------
+  const holdBtn = document.getElementById("holdBtn");
+  const holdFill = document.getElementById("holdFill");
+  let btnStart = 0, btnRaf = 0;
+  const btnTick = now => {
+    const p = Math.min((now - btnStart) / HOLD_MS, 1);
+    holdFill.style.transform = `scaleX(${p})`;
+    if (p >= 1) { btnCancel(); stop(); return; }
+    btnRaf = requestAnimationFrame(btnTick);
+  };
+  const btnCancel = () => { btnStart = 0; cancelAnimationFrame(btnRaf); holdFill.style.transform = "scaleX(0)"; };
+  holdBtn.addEventListener("pointerdown", e => { e.stopPropagation(); btnStart = performance.now(); btnRaf = requestAnimationFrame(btnTick); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(t => holdBtn.addEventListener(t, btnCancel));
+  holdBtn.addEventListener("click", e => e.stopPropagation());
+})();
+</script>
+</body>
+</html>
