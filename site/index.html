@@ -94,7 +94,7 @@
   .chip.recording { color: var(--accent); border-color: var(--accent); }
 
   /* ---------- modes: three full-height panels ---------- */
-  .modes { display: flex; gap: 12px; padding: 0 28px; min-height: 340px; }
+  .modes { display: flex; gap: 12px; padding: 0 28px; height: clamp(260px, 44vh, 460px); }
   .mode {
     flex: 1 1 0; min-width: 0; position: relative; overflow: hidden;
     border: 1px solid var(--line); border-radius: 12px; padding: 28px;
@@ -180,14 +180,9 @@
   .commands { display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
   .commands span::before { content: "$ "; opacity: .5; }
 
-  /* the first screen fills the viewport; the video and footer sit below it */
-  .first { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
 
   /* ---------- video ---------- */
-  .watch { padding: 72px 28px 24px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
-  .watch .label { text-align: center; }
-  .watch h3 { margin: 0; font-size: clamp(26px, 3.4vw, 40px); font-weight: 600; letter-spacing: -.025em; text-align: center; }
-  .watch h3 em { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; font-size: 1.1em; color: var(--muted); }
+  .watch { padding: 0 28px; display: flex; justify-content: center; }
   .player {
     width: min(1100px, 100%); aspect-ratio: 16 / 9; border-radius: 14px; overflow: hidden;
     border: 1px solid var(--line); background: #131211; box-shadow: 0 30px 80px rgba(30, 26, 21, .16);
@@ -207,7 +202,8 @@
 
   @media (max-width: 860px) {
     header { padding: 16px; }
-    .watch { padding: 48px 16px 8px; }
+    .watch { padding: 0 16px; }
+    .modes { height: auto; }
     footer { margin: 40px 16px 0; }
     .modes { flex-direction: column; padding: 0 16px; min-height: 0; }
     .mode { min-height: 150px; padding: 22px; }
@@ -276,7 +272,6 @@
 </head>
 <body>
 
-<div class="first">
 <header class="rise">
   <div class="brand"><span class="dot"></span>wipe <em>mode</em></div>
   <div class="top-right">
@@ -332,13 +327,10 @@
     <span>wipe keyboard</span>
   </div>
 </section>
-</div>
 
 <section class="watch" id="watch">
-  <span class="label">See it in 24 seconds</span>
-  <h3>Clean <em>without</em> shutting down</h3>
   <div class="player">
-    <video src="media/wipe-promo.mp4" poster="media/poster.jpg" controls playsinline preload="metadata"></video>
+    <video src="media/wipe-promo.mp4" poster="media/poster.jpg" autoplay muted loop controls playsinline preload="auto" aria-label="wipe in 24 seconds"></video>
   </div>
 </section>
 
